@@ -74,6 +74,26 @@ namespace KinectVCam
             *(uint*)(b + 40) = 1;
         }
 
+        /// <summary>
+        /// true se algum app está pedindo quadros agora (a DLL atualiza readerTick, offset 44, a cada quadro pedido).
+        /// É isto que decide ligar/desligar o Kinect, como uma webcam de verdade.
+        /// </summary>
+        public unsafe bool IsInUse(int windowMs)
+        {
+            EnsureOpen();
+            if (view == IntPtr.Zero) return false;
+            uint tick = *(uint*)((byte*)view + 44);
+            return tick != 0 && unchecked((uint)GetTickCount64() - tick) < (uint)windowMs;
+        }
+
+        /// <summary>Solta a memória compartilhada (ela some quando o app que abriu a câmera fechar).</summary>
+        public void Disconnect()
+        {
+            if (view == IntPtr.Zero) return;
+            Dispose();
+            Log.Write(label + ": desconectado da câmera virtual (nenhum app usando).");
+        }
+
         public unsafe void SetNoSignal()
         {
             if (view == IntPtr.Zero) return;

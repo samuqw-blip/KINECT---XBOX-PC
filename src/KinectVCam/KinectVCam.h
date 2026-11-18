@@ -44,7 +44,9 @@ struct KvcHeader
     volatile int64_t seq;
     volatile int64_t writeTickMs; // GetTickCount64() do escritor
     volatile uint32_t status;     // 1 = Kinect com imagem, 0 = sem sinal
-    uint32_t reserved[5];
+    volatile uint32_t readerTick; // GetTickCount() (32 bits) do último pedido de quadro de um app.
+                                  // O KinectBridge só liga o Kinect enquanto isto for recente.
+    uint32_t reserved[4];
 };
 #pragma pack(pop)
 static_assert(sizeof(KvcHeader) == 64, "header deve ter 64 bytes");

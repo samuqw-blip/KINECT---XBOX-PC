@@ -12,7 +12,7 @@ namespace KinectVCam
         [STAThread]
         static int Main(string[] args)
         {
-            string cmd = args.Length > 0 ? args[0].ToLowerInvariant() : "--tray";
+            string cmd = args.Length > 0 ? args[0].ToLowerInvariant() : "--background";
             switch (cmd)
             {
                 case "--test": return TestCapture(args.Length > 1 ? int.Parse(args[1]) : 10);
@@ -28,17 +28,28 @@ namespace KinectVCam
                 case "--autostart":
                     Bridge.AutoStart = args.Length > 1 && args[1].ToLowerInvariant() == "on";
                     return 0;
-                case "--tray":
+                case "--background": // padrão: sem ícone, igual ao driver de uma webcam
+                case "--tray":       // mesmo processo, mas mostrando o ícone (para configurar)
+                    bool showIcon = cmd == "--tray";
                     bool created;
                     using (var mutex = new Mutex(true, @"Local\KinectVCamTray", out created))
                     {
-                        if (!created) { Log.Write("KinectBridge já está rodando."); return 0; }
+                        if (!created)
+                        {
+                            // Já está rodando em segundo plano: só pede para ele mostrar o ícone.
+                            if (showIcon)
+                            {
+                                EventWaitHandle ev;
+                                if (EventWaitHandle.TryOpenExisting(TrayApp.ShowIconEventName, out ev)) using (ev) ev.Set();
+                            }
+                            return 0;
+                        }
                         System.Windows.Forms.Application.EnableVisualStyles();
-                        System.Windows.Forms.Application.Run(new TrayApp());
+                        System.Windows.Forms.Application.Run(new TrayApp(showIcon));
                     }
                     return 0;
             }
-            Console.WriteLine("Uso: KinectBridge.exe [--tray | --on | --off | --status | --autostart on|off | --test [segundos]]");
+            Console.WriteLine("Uso: KinectBridge.exe [--background | --tray | --on | --off | --status | --autostart on|off | --test [segundos]]");
             return 1;
         }
 

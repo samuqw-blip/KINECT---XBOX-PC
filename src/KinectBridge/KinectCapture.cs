@@ -33,6 +33,9 @@ namespace KinectVCam
         Thread worker;
         volatile bool stop;
 
+        /// <summary>Fluxos abertos no sensor. A webcam usa só Color (o emissor IR não é ligado à toa).</summary>
+        public FrameSourceTypes Sources = FrameSourceTypes.Color | FrameSourceTypes.Infrared;
+
         /// <summary>
         /// Normalização do IR igual à dos exemplos do SDK: valor/65535 dividido por (média da cena 0,08 x 3 desvios),
         /// limitado a [0,01; 1], depois 0..255.
@@ -94,7 +97,7 @@ namespace KinectVCam
                     return;
                 }
                 sensor.Open();
-                reader = sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color | FrameSourceTypes.Infrared);
+                reader = sensor.OpenMultiSourceFrameReader(Sources);
                 Log.Write("Kinect: sensor aberto, aguardando dispositivo...");
 
                 while (!stop)
@@ -116,8 +119,8 @@ namespace KinectVCam
 
                     if (multi != null)
                     {
-                        got |= HandleColor(multi);
-                        got |= HandleInfrared(multi);
+                        if ((Sources & FrameSourceTypes.Color) != 0) got |= HandleColor(multi);
+                        if ((Sources & FrameSourceTypes.Infrared) != 0) got |= HandleInfrared(multi);
                     }
 
                     int now = Environment.TickCount;
@@ -141,7 +144,7 @@ namespace KinectVCam
                                 sensor.Close();
                                 Thread.Sleep(500);
                                 sensor.Open();
-                                reader = sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Color | FrameSourceTypes.Infrared);
+                                reader = sensor.OpenMultiSourceFrameReader(Sources);
                             }
                             catch (Exception ex) { Log.Write("Kinect: falha ao reabrir: " + ex.Message); }
                         }

@@ -12,43 +12,72 @@ namespace KinectVCam
         const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
         const string RunValue = "KinectVCam";
 
-        readonly KinectCapture capture = new KinectCapture();
+        // Só cor: o emissor infravermelho não é ligado à toa.
+        readonly KinectCapture capture = new KinectCapture { Sources = Microsoft.Kinect.FrameSourceTypes.Color };
         readonly SharedFrameWriter color = new SharedFrameWriter(@"Global\KinectVCam_Color", ColorName,
             KinectCapture.ColorWidth, KinectCapture.ColorHeight, SharedFrameWriter.FormatYuy2);
-        readonly SharedFrameWriter ir = new SharedFrameWriter(@"Global\KinectVCam_IR", IrName,
-            KinectCapture.IrWidth, KinectCapture.IrHeight, SharedFrameWriter.FormatGray8);
-        bool running;
+
+        // Igual a uma webcam: o Kinect só liga quando um app pede imagem e desliga logo depois que ele para.
+        const int InUseWindowMs = 2000;   // a DLL marca a cada quadro pedido; sem marca há 2 s = ninguém usando
+        const int IdleOffDelayMs = 3000;  // espera um pouco antes de desligar (troca de resolução, reabertura)
+        bool armed, running;
+        int lastUseMs;
 
         public KinectCapture Capture { get { return capture; } }
+        /// <summary>true enquanto algum app está usando a câmera (e o Kinect está ligado).</summary>
+        public bool InUse { get { return running; } }
 
         public Bridge()
         {
             capture.ColorFrameReady += color.Write;
-            capture.InfraredFrameReady += ir.Write;
-            capture.SignalChanged += s => { if (!s) { color.SetNoSignal(); ir.SetNoSignal(); } };
+            capture.SignalChanged += s => { if (!s) color.SetNoSignal(); };
         }
 
-        public void StartCapture()
-        {
-            if (running) return;
-            running = true;
-            capture.Start();
-        }
+        /// <summary>Câmera disponível: o Kinect fica DESLIGADO até algum app abrir a câmera.</summary>
+        public void StartCapture() { armed = true; }
 
+        /// <summary>Câmera indisponível: desliga o Kinect se estiver ligado.</summary>
         public void StopCapture()
+        {
+            armed = false;
+            SensorOff("câmera desativada");
+        }
+
+        /// <summary>Chamar periodicamente (~250 ms): liga/desliga o sensor conforme algum app usa a câmera.</summary>
+        public void Poll()
+        {
+            if (!armed) return;
+            int now = Environment.TickCount;
+            if (color.IsInUse(InUseWindowMs))
+            {
+                lastUseMs = now;
+                if (!running)
+                {
+                    running = true;
+                    Log.Write("Um app abriu a câmera: ligando o Kinect.");
+                    capture.Start();
+                }
+            }
+            else if (running && now - lastUseMs > IdleOffDelayMs)
+            {
+                SensorOff("nenhum app usando a câmera");
+            }
+        }
+
+        void SensorOff(string reason)
         {
             if (!running) return;
             running = false;
             capture.Stop();
             color.SetNoSignal();
-            ir.SetNoSignal();
+            color.Disconnect();
+            Log.Write("Kinect desligado (" + reason + ").");
         }
 
         public void Dispose()
         {
             StopCapture();
             color.Dispose();
-            ir.Dispose();
         }
 
         // ---------- câmeras virtuais (KinectVCam.dll) ----------
@@ -94,7 +123,7 @@ namespace KinectVCam
             {
                 using (var k = Registry.CurrentUser.CreateSubKey(RunKey))
                 {
-                    if (value) k.SetValue(RunValue, "\"" + System.Reflection.Assembly.GetExecutingAssembly().Location + "\" --tray");
+                    if (value) k.SetValue(RunValue, "\"" + System.Reflection.Assembly.GetExecutingAssembly().Location + "\" --background");
                     else k.DeleteValue(RunValue, false);
                 }
                 Log.Write("Iniciar com o Windows: " + (value ? "ATIVADO" : "desativado"));

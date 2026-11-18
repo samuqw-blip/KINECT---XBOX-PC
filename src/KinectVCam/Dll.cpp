@@ -154,7 +154,10 @@ extern "C" HRESULT __stdcall KvcSetCameras(BOOL on)
         ComPtr<IMFVirtualCamera> cam;
         hr = MFCreateVirtualCamera(MFVirtualCameraType_SoftwareCameraSource, MFVirtualCameraLifetime_System,
                                    MFVirtualCameraAccess_CurrentUser, ki.friendlyName, clsid, nullptr, 0, &cam);
-        if (SUCCEEDED(hr)) hr = on ? cam->Start(nullptr) : cam->Remove();
+        // Só a "Kinect Cor" é publicada; a "Kinect Infravermelho" é sempre removida (limpa instalações antigas).
+        bool publish = on && (CamKind)i == CamKind::Color;
+        if (SUCCEEDED(hr)) hr = publish ? cam->Start(nullptr) : cam->Remove();
+        if ((CamKind)i == CamKind::Infrared && FAILED(hr)) hr = S_OK; // já não existia: tudo bem
         if (cam) cam->Shutdown();
         LogDbg(L"%s: %s -> 0x%08X", ki.friendlyName, on ? L"ligar" : L"desligar", hr);
         if (FAILED(hr) && SUCCEEDED(result)) result = hr;

@@ -1,7 +1,7 @@
 ﻿; Instalador do Kinect Webcam (Inno Setup 6). Gere com installer\build-installer.cmd.
 ; Resultado: dist\KinectWebcam-Setup-<versão>.exe
 
-#define AppVersion "1.0.0"
+#define AppVersion "1.1.0"
 
 [Setup]
 AppId={{B3F1E2A4-6C7D-4E8F-9A0B-1C2D3E4F5A6B}
@@ -31,7 +31,7 @@ Name: "ptbr"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 Name: "en"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "autostart"; Description: "Iniciar o Kinect Webcam junto com o Windows"; Flags: unchecked
+Name: "autostart"; Description: "Iniciar o Kinect Webcam junto com o Windows (em segundo plano, sem ícone; o Kinect só liga quando um app usa a câmera)"
 
 [Files]
 Source: "..\bin\KinectVCam.dll"; DestDir: "{app}"; Flags: ignoreversion regserver restartreplace uninsrestartdelete
@@ -45,9 +45,9 @@ Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreve
 Name: "{commonappdata}\KinectVCam"
 
 [Icons]
-Name: "{group}\Kinect Webcam"; Filename: "{app}\KinectBridge.exe"; Parameters: "--tray"
-Name: "{group}\Ligar câmeras do Kinect"; Filename: "{app}\KinectBridge.exe"; Parameters: "--on"
-Name: "{group}\Desligar câmeras do Kinect"; Filename: "{app}\KinectBridge.exe"; Parameters: "--off"
+Name: "{group}\Kinect Webcam (configurações)"; Filename: "{app}\KinectBridge.exe"; Parameters: "--tray"
+Name: "{group}\Ativar câmera do Kinect"; Filename: "{app}\KinectBridge.exe"; Parameters: "--on"
+Name: "{group}\Desativar câmera do Kinect"; Filename: "{app}\KinectBridge.exe"; Parameters: "--off"
 Name: "{group}\Desinstalar Kinect Webcam"; Filename: "{uninstallexe}"
 
 [Run]
@@ -56,7 +56,7 @@ Filename: "{sys}\icacls.exe"; Parameters: """{commonappdata}\KinectVCam"" /grant
 ; Registra as câmeras como o usuário (não elevado) e grava a preferência "ligadas"
 Filename: "{app}\KinectBridge.exe"; Parameters: "--on"; Flags: runasoriginaluser runhidden waituntilterminated
 Filename: "{app}\KinectBridge.exe"; Parameters: "--autostart on"; Tasks: autostart; Flags: runasoriginaluser runhidden waituntilterminated
-Filename: "{app}\KinectBridge.exe"; Parameters: "--tray"; Description: "Iniciar o Kinect Webcam agora"; Flags: postinstall nowait runasoriginaluser
+Filename: "{app}\KinectBridge.exe"; Parameters: "--background"; Description: "Iniciar o Kinect Webcam agora (em segundo plano, sem ícone)"; Flags: postinstall nowait runasoriginaluser runhidden
 
 [UninstallRun]
 Filename: "{sys}\taskkill.exe"; Parameters: "/f /im KinectBridge.exe"; Flags: runhidden; RunOnceId: "KillBridge"
@@ -98,3 +98,4 @@ begin
   Exec(ExpandConstant('{sys}\net.exe'), 'stop FrameServer', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Result := '';
 end;
+

@@ -77,6 +77,8 @@ const KvcHeader* SharedFrameSource::LiveHeader()
 bool SharedFrameSource::Produce(BYTE* dst, LONG pitch, UINT32 w, UINT32 h, bool nv12, DWORD maxWaitMs)
 {
     EnsureMapped();
+    // Sinal de "câmera em uso": o KinectBridge liga o sensor enquanto isto estiver sendo atualizado.
+    if (_view) ((KvcHeader*)_view)->readerTick = (uint32_t)GetTickCount64();
     const KindInfo& ki = Info(_kind);
     ULONGLONG start = GetTickCount64();
 
