@@ -1,0 +1,17 @@
+# Saídas de compilação
+bin/
+obj/
+dist/
+
+# Cópias de segurança locais
+backup/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.pdb
+*.ilk
+*.obj
+*.iobj
+*.ipdb
