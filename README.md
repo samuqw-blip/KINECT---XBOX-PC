@@ -1,2 +1,199 @@
-# KINECT---XBOX-PC
-Kinect Webcam  Transforma o **Kinect v2 (Xbox One / Kinect for Windows v2)** em **webcam no Windows 11**.
+# Kinect Webcam
+
+Transforma o **Kinect v2 (Xbox One / Kinect for Windows v2)** em **webcam no Windows 11**.
+Cria duas câmeras que aparecem em qualquer programa, como uma webcam comum:
+
+- **Kinect Cor**: imagem colorida em 1920x1080 (também 1280x720), 30 fps
+- **Kinect Infravermelho**: imagem infravermelha em escala de cinza, 512x424, 30 fps (enxerga no escuro)
+
+Funciona no app Câmera do Windows, Teams, OBS, navegadores (Chrome/Edge) e outros programas de vídeo.
+
+## ⚠️ Aviso: o Kinect foi descontinuado pela Microsoft
+
+A Microsoft **encerrou o Kinect**:
+- a fabricação do Kinect parou em **2017**, e o adaptador do Kinect para PC deixou de ser vendido em **2018**;
+- o **Kinect for Windows SDK/Runtime 2.0** é de **2014** e não recebe mais atualizações nem suporte;
+- o sucessor (Azure Kinect DK) também foi descontinuado.
+
+Por isso, **a Microsoft não tem driver nem webcam oficial do Kinect para o Windows 11**. Este projeto usa o
+runtime antigo (que ainda instala e funciona no Windows 11) e cria as câmeras por conta própria.
+Como o driver é antigo, o Kinect pode ficar instável em PCs atuais. Veja os
+[ajustes necessários](#ajustes-necessários-para-o-kinect-ficar-estável) abaixo.
+
+## Requisitos
+
+| O que | Detalhe |
+|---|---|
+| **Windows 11** | Versão 21H2 ou mais nova (build 22000+). **Não funciona no Windows 10**, que não tem a API de câmera virtual. |
+| **Kinect v2** | Sensor do Xbox One ou Kinect for Windows v2 |
+| **Adaptador do Kinect para PC** | O Kinect do Xbox One precisa do adaptador oficial (fonte + USB 3.0) |
+| **Porta USB 3.0** | De preferência ligada direto na placa-mãe |
+| **Kinect for Windows Runtime 2.0** | Driver gratuito da Microsoft: [baixar aqui](https://www.microsoft.com/download/details.aspx?id=44559). O instalador avisa se estiver faltando. |
+| .NET Framework 4.8 | Já vem com o Windows 11 |
+
+Para conferir se o Kinect está funcionando antes de instalar: o **Gerenciador de Dispositivos** deve mostrar
+"Xbox NUI Sensor" e "WDF KinectSensor Interface 0" sem erro.
+
+## Ajustes necessários para o Kinect ficar estável
+
+### O problema
+Sem estes ajustes, o Kinect pode **cair sozinho**: a luz branca apaga, ele **some do Gerenciador de
+Dispositivos** e volta segundos depois, ou não volta até ser desconectado. Isso acontece por dois motivos:
+
+1. **Economia de energia da USB:** o Windows desliga a porta USB para economizar energia, e o driver antigo do Kinect não se recupera direito.
+2. **Aprimoramentos de áudio do microfone do Kinect:** o Windows 11 aplica efeitos de áudio ao "Grupo de microfones (Xbox NUI Sensor)".
+   Com o driver antigo, isso pode travar o dispositivo inteiro, inclusive as câmeras.
+
+Depois de desconectar e reconectar, o microfone do Kinect às vezes aparece com **status "Erro"** no Gerenciador de
+Dispositivos. **Isso não afeta as câmeras.** Se precisar do microfone, desconecte e reconecte o Kinect de novo.
+
+### Como ajustar (faça uma vez)
+1. **Desligar os aprimoramentos de áudio do microfone do Kinect**
+   Configurações → Sistema → Som → Entrada → **Grupo de microfones (Xbox NUI Sensor)** →
+   **Aprimoramentos de áudio: Desativado**.
+2. **Desligar a suspensão seletiva da USB**
+   Painel de Controle → Opções de Energia → *Alterar configurações do plano* → *Alterar configurações de energia avançadas* →
+   **Configurações de USB → Configuração de suspensão seletiva USB: Desabilitado** (na bateria e na tomada).
+3. **Impedir o Windows de desligar a USB do Kinect**
+   Gerenciador de Dispositivos → *Controladores USB (barramento serial universal)* → para cada **Hub raiz USB (USB 3.0)** e
+   **Controlador de host extensível USB (xHCI)**: Propriedades → *Gerenciamento de energia* → desmarque
+   **"O computador pode desligar o dispositivo para economizar energia"**.
+4. Use uma **porta USB 3.0 direto na placa-mãe** (atrás do PC), não um hub nem uma porta frontal.
+
+O Kinect Webcam também se protege: se o Kinect cair, as câmeras continuam registradas, mostram **"SEM SINAL"**,
+a queda fica registrada no log e a imagem **volta sozinha** quando o Kinect reconecta.
+
+## Instalação
+
+1. Instale o **Kinect for Windows Runtime 2.0** (link acima), conecte o Kinect e faça os [ajustes acima](#ajustes-necessários-para-o-kinect-ficar-estável).
+2. Baixe o `KinectWebcam-Setup-x.y.z.exe` na página **[Releases](../../releases)** deste repositório.
+3. Execute e siga os passos. O instalador pede permissão de administrador uma vez.
+   - O Windows pode mostrar "O Windows protegeu o computador" porque o instalador não tem assinatura digital.
+     Clique em **Mais informações → Executar assim mesmo**.
+4. Ao terminar, o **Kinect Webcam** abre na bandeja do Windows (perto do relógio), e as câmeras já aparecem nos programas.
+
+## Como usar
+
+No programa de vídeo, escolha a câmera **"Kinect Cor"** ou **"Kinect Infravermelho"**:
+
+- **Teams:** Configurações → Dispositivos → Câmera
+- **OBS:** Fontes → + → Dispositivo de captura de vídeo → Dispositivo
+- **Navegador:** o site pede permissão da câmera; escolha a câmera do Kinect na lista
+- **App Câmera do Windows:** botão "Alterar câmera"
+
+### Ícone na bandeja
+Clique com o botão direito no ícone do Kinect:
+- **Câmeras ligadas:** liga ou desliga as câmeras na hora, sem reiniciar
+- **Iniciar com o Windows:** desligado por padrão
+- **Abrir log** e **Sair**
+
+Cor do ícone: 🟢 recebendo imagem · 🟠 sem sinal (Kinect desconectado) · ⚪ câmeras desligadas.
+
+No Menu Iniciar também há atalhos para **Ligar** e **Desligar** as câmeras.
+
+### Linha de comando (opcional)
+```
+"C:\Program Files\KinectVCam\KinectBridge.exe" --on          liga as câmeras
+"C:\Program Files\KinectVCam\KinectBridge.exe" --off         desliga as câmeras
+"C:\Program Files\KinectVCam\KinectBridge.exe" --status      mostra o estado
+"C:\Program Files\KinectVCam\KinectBridge.exe" --autostart on|off
+```
+
+## Limitações
+
+- ❌ **Windows Hello não funciona.** O reconhecimento facial do Windows não aceita câmera virtual.
+- ❌ **Cada câmera só pode ser usada por um programa de cada vez.** Se a imagem ficar preta, feche a câmera no outro programa.
+  Dá para usar "Kinect Cor" num programa e "Kinect Infravermelho" em outro ao mesmo tempo.
+- Não tem áudio: o microfone do Kinect continua funcionando como microfone normal do Windows.
+- Com pouca luz, o próprio Kinect reduz a câmera colorida para 15 fps.
+- Enquanto o Kinect Webcam está aberto, ele usa o Kinect. Para usar o Kinect Studio ou outros apps do Kinect, desligue as câmeras ou saia pela bandeja.
+
+## Solução de problemas
+
+| Problema | O que fazer |
+|---|---|
+| Aparece "SEM SINAL" | O Kinect está desconectado, sem energia ou o Kinect Webcam não está aberto. Confira a luz do Kinect e o ícone da bandeja. Quando o Kinect volta, a imagem volta sozinha. |
+| Imagem preta | Outro programa está usando a mesma câmera. Feche-a no outro programa. |
+| As câmeras não aparecem | Abra o Kinect Webcam pelo Menu Iniciar e confira se "Câmeras ligadas" está marcado. |
+| Imagem muito clara ou estourada no OBS | Propriedades da fonte → **Intervalo de cores**: teste "Parcial" e "Completo". |
+| Kinect cai sozinho (luz apaga, some do Gerenciador de Dispositivos) | Faça os [ajustes necessários](#ajustes-necessários-para-o-kinect-ficar-estável): aprimoramentos de áudio desligados e economia de energia da USB desligada. |
+| Microfone do Kinect com status "Erro" | Não afeta as câmeras. Desconecte e reconecte o Kinect se precisar do microfone. |
+
+Logs (úteis para relatar problemas):
+- `%LOCALAPPDATA%\KinectVCam\kinectvcam.log`: Kinect conectado/desconectado, reconexões
+- `C:\ProgramData\KinectVCam\vcam.log`: lado da câmera virtual
+
+## Desinstalar
+**Configurações → Aplicativos → Aplicativos instalados → Kinect Webcam → Desinstalar.**
+O desinstalador remove as câmeras, o "iniciar com o Windows" e os arquivos.
+
+---
+
+## Para desenvolvedores
+
+### Como funciona
+```
+Kinect v2 ──► KinectBridge.exe (C#, .NET Framework 4.8)
+              lê cor + infravermelho (MultiSourceFrameReader), normaliza o IR para 8 bits,
+              desespelha a imagem e grava em memória compartilhada (Global\KinectVCam_*)
+                         │
+                         ▼
+              KinectVCam.dll (C++, Media Foundation)
+              fonte de mídia carregada pelo serviço "Windows Camera Frame Server";
+              entrega NV12/YUY2 aos programas ou o quadro "SEM SINAL"
+                         │
+                         ▼
+              Câmeras virtuais registradas com MFCreateVirtualCamera
+              ("Kinect Cor" e "Kinect Infravermelho")
+```
+
+A DLL precisa ser nativa (C++) porque é carregada dentro de um serviço do Windows.
+
+### Requisitos para compilar
+- **Visual Studio 2022 Build Tools** (ou Visual Studio 2022) com:
+  - *Desenvolvimento para desktop com C++* (MSVC v143)
+  - *Windows 11 SDK* (10.0.22000 ou mais novo)
+  - *.NET Framework 4.8 targeting pack*
+- **Kinect for Windows SDK 2.0**: [baixar](https://www.microsoft.com/download/details.aspx?id=44561) (fornece o `Microsoft.Kinect.dll`)
+- **Inno Setup 6**, só para gerar o instalador: `winget install JRSoftware.InnoSetup`
+
+### Compilar
+```
+build.cmd                          compila tudo em bin\
+installer\build-installer.cmd      compila e gera o instalador em dist\
+```
+
+Para testar sem instalador (desenvolvimento): `scripts\install.cmd` e `scripts\uninstall.cmd`.
+
+### Estrutura
+```
+src/KinectBridge/     C#: leitura do Kinect, memória compartilhada, ícone da bandeja
+src/KinectVCam/       C++: fonte de mídia da câmera virtual (DLL COM)
+tools/VCamTest/       ferramenta de teste: lista câmeras e lê quadros via Media Foundation
+installer/            script do Inno Setup e build do instalador
+scripts/              instalar/desinstalar manualmente (desenvolvimento)
+build.cmd             compila tudo
+```
+
+### Testes realizados
+Windows 11 25H2 (build 26200) com Kinect v2 real:
+
+| Teste | Resultado |
+|---|---|
+| Leitura do Kinect (cor + IR juntos) | ✅ 30 fps nos dois (15 fps com pouca luz) |
+| App Câmera do Windows | ✅ As duas câmeras com imagem |
+| Chrome (webcamtests.com) | ✅ Cor 1920x1080 a 30 fps, IR 512x424 a 30 fps |
+| Microsoft Teams | ✅ |
+| OBS Studio | ✅ |
+| Cor e IR abertas ao mesmo tempo | ✅ |
+| Desconectar/reconectar o Kinect com a câmera aberta | ✅ "SEM SINAL" em cerca de 1,5 s; a imagem volta sozinha cerca de 5 s depois de reconectar, sem reabrir o programa |
+| Ligar/desligar câmeras sem reiniciar | ✅ |
+| Instalar, desinstalar, reinstalar e atualizar (instalador) | ✅ |
+| Dois programas na mesma câmera | ❌ Não suportado (limitação) |
+| Discord, Zoom | Não testados |
+
+## Licença
+Código aberto, sob a [licença MIT](LICENSE): pode usar, modificar e redistribuir, mantendo o aviso de licença.
+
+O `Microsoft.Kinect.dll` incluído no instalador e o Kinect for Windows Runtime são da Microsoft e seguem a licença
+do Kinect for Windows SDK 2.0.
